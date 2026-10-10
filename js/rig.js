@@ -20,7 +20,14 @@ const Rig = Studio.rig = {
     $('#rgResetKey').onclick = () => { const l = this.sel; if (!l) return; const t = this.target(l); if (t.isBase) { l.part.base = Z(); App.toast('基本姿勢已重設'); } else { delete l.part.keys[t.pid][t.k]; App.toast('這個關鍵姿勢已清除'); } this.refreshParams(); App.invalidate(); App.dirty(); };
     $('#rgShowAll').onclick = (e) => { this.showAll = !this.showAll; e.target.classList.toggle('on', this.showAll); App.invalidate(); };
     $('#rgAutoParent').onclick = () => { this.autoParent(); this.refresh(); App.invalidate(); App.dirty(); App.toast('已依名稱設定父子關係'); };
-    $('#rgAutoRig').onclick = async () => { if (!(await App.confirm('依零件名稱（head、eye、mouth、body…）自動做出頭轉、呼吸、眨眼、嘴開合的關鍵姿勢？會覆蓋這些動作現有的姿勢。'))) return; this.autoParent(); this.autoRig(); this.refresh(); this.refreshParams(); App.invalidate(); App.dirty(); App.toast('一鍵骨架完成，按「▶ 試玩」看看'); };
+    $('#rgAutoRig').onclick = async () => { const known = App.doc.layers.filter(l => this.kind(l) !== 'other'); const unknown = App.doc.layers.filter(l => this.kind(l) === 'other');
+      if (!known.length) { App.modal(`<h2>一鍵骨架需要分好零件</h2><div class="dim">目前的圖層（${App.doc.layers.map(l => l.name).join('、')}）我認不出哪個是頭、眼睛、身體。</div><pre>做法：
+1. 回「繪圖」，用「選取」圈出頭的範圍 → 下面按「切到新圖層」→ 選 head（頭）
+2. 同樣切出 eye_normal（眼睛）、mouth_normal（嘴）、hair_front（前髮）、body（身體）、arm_L／arm_R（手臂）…
+3. 再回來按「一鍵骨架」，或直接選零件、拉滑桿到一端、拖零件擺姿勢
+一張單層的線稿沒有分零件，是沒辦法動的（Live2D 也一樣）。</pre><div class="btns"><button class="sm pri" onclick="Studio.app.closeModal()">知道了</button></div>`); return; }
+      if (!(await App.confirm(`認得的零件：${known.map(l => l.name).join('、')}${unknown.length ? '\n認不得（不會動）：' + unknown.map(l => l.name).join('、') : ''}\n要自動做出頭轉、呼吸、眨眼、嘴開合的姿勢嗎？會覆蓋這些動作現有的姿勢。`))) return;
+      this.autoParent(); this.autoRig(); this.refresh(); this.refreshParams(); App.invalidate(); App.dirty(); App.toast('一鍵骨架完成，按「▶ 試玩」看看'); };
     $('#prAdd').onclick = () => this.addParamDialog(); $('#pkNew').onclick = () => this.addParamDialog();
     $('#pkAdd2').onclick = () => this.addKeys(2); $('#pkAdd3').onclick = () => this.addKeys(3);
     $('#pkDel').onclick = () => { const l = this.sel, p = this.param(); if (!l || !p) return; delete l.part.keys[p.id]; this.refreshParams(); App.invalidate(); App.dirty(); App.toast('已刪除「' + l.name + '」在「' + p.name + '」的關鍵形'); };
@@ -119,9 +126,12 @@ const Rig = Studio.rig = {
       const h = this.handles(l); const pose = this.pose(l);
       if (U.dist(p, h.rot) < r) { this.drag = { k: 'rot', a0: Math.atan2(p.y - h.cen.y, p.x - h.cen.x), cen: h.cen, rot0: pose.rot }; return true; }
       if (h.corners.some(q => U.dist(p, q) < r)) { this.drag = { k: 'scale', d0: U.dist(p, h.cen), cen: h.cen, s0: [pose.sx, pose.sy] }; return true; } }
-    // 點到哪個零件就選它（有像素的地方才算）
-    for (let i = App.doc.layers.length - 1; i >= 0; i--) { const o = App.doc.layers[i]; if (!o.visible) continue; const q = this.world(o).inverse().transformPoint(new DOMPoint(p.x, p.y)); const ob = this.bounds(o); if (q.x >= ob.x && q.x <= ob.x + ob.w && q.y >= ob.y && q.y <= ob.y + ob.h) { const dd = o.canvas(0).getContext('2d').getImageData(q.x | 0, q.y | 0, 1, 1).data; if (dd[3] > 8) { if (o !== l) App.setActive(o); const pose = this.pose(o); this.drag = { k: 'move', p0: p, pose0: [pose.dx, pose.dy], par: this.parentWorld(o) }; return true; } } }
-    return false; },
+    // 點到哪個零件就選它：先看有沒有碰到像素（線稿很細，所以看周圍 ±6px），沒有的話就看框住點的最小零件；都沒有就拖目前選的零件
+    const hitAlpha = (o, q) => { const cv = o.canvas(0); const x0 = Math.max(0, (q.x | 0) - 6), y0 = Math.max(0, (q.y | 0) - 6); const w = Math.min(cv.width - x0, 13), h = Math.min(cv.height - y0, 13); if (w <= 0 || h <= 0) return false; const d = cv.getContext('2d').getImageData(x0, y0, w, h).data; for (let i = 3; i < d.length; i += 4) if (d[i] > 8) return true; return false; };
+    let pick = null, best = null, bestArea = Infinity;
+    for (let i = App.doc.layers.length - 1; i >= 0; i--) { const o = App.doc.layers[i]; if (!o.visible) continue; const q = this.world(o).inverse().transformPoint(new DOMPoint(p.x, p.y)); const ob = this.bounds(o); if (q.x < ob.x || q.x > ob.x + ob.w || q.y < ob.y || q.y > ob.y + ob.h) continue; if (!pick && hitAlpha(o, q)) pick = o; const area = ob.w * ob.h; if (area < bestArea) { bestArea = area; best = o; } }
+    const o = pick || best || l; if (!o) return false; if (o !== l) App.setActive(o);
+    const pose = this.pose(o); this.drag = { k: 'move', p0: p, pose0: [pose.dx, pose.dy], par: this.parentWorld(o) }; return true; },
   parentWorld(l){ const par = l.part.parent && App.doc.layers.find(x => x.id === l.part.parent); return par ? this.world(par) : new DOMMatrix(); },
   pointerMove(p){ const g = this.drag, l = this.sel; if (!g || !l) return; const t = this.target(l).pose; const m = this.world(l);
     if (g.k === 'pivot') { const lp = m.inverse().transformPoint(new DOMPoint(p.x, p.y)); l.part.pivot = { x: lp.x, y: lp.y }; }

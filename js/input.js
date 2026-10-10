@@ -21,7 +21,7 @@ function tool(){ return Studio.tools[App.tool]; }
 function cancelStroke(){ if (strokePtr != null) { const t = tool(); t && t.cancel && t.cancel(); strokePtr = null; } }
 
 App.screen.addEventListener('pointerdown', (ev) => {
-  ev.preventDefault(); App.screen.setPointerCapture(ev.pointerId); App.closePopups && App.closePopups();
+  ev.preventDefault(); try { App.screen.setPointerCapture(ev.pointerId); } catch (e) {} App.closePopups && App.closePopups();
   const sp = localPt(ev); ptrs.set(ev.pointerId, { x: sp.x, y: sp.y, type: ev.pointerType, t: performance.now() });
   App.cursor = sp; App.lastPointerType = ev.pointerType;
   if (ev.pointerType === 'touch' && ptrs.size >= 2) { // 第二根手指：進入手勢

@@ -6,14 +6,16 @@ function parseBplist(buf){
   const dv = new DataView(buf), u8 = new Uint8Array(buf);
   const magic = String.fromCharCode(...u8.slice(0, 8)); if (!magic.startsWith('bplist')) throw new Error('不是 binary plist');
   const t = buf.byteLength - 32; const offSize = u8[t + 6], refSize = u8[t + 7];
-  const numObjects = Number(dv.getBigUint64(t + 8)), top = Number(dv.getBigUint64(t + 16)), tableOff = Number(dv.getBigUint64(t + 24));
+  const u64 = (p) => dv.getUint32(p) * 4294967296 + dv.getUint32(p + 4); // 不用 BigInt，舊 Safari 也能跑
+  const numObjects = u64(t + 8), top = u64(t + 16), tableOff = u64(t + 24);
   const readUInt = (pos, n) => { let v = 0; for (let i = 0; i < n; i++) v = v * 256 + u8[pos + i]; return v; };
   const offsets = []; for (let i = 0; i < numObjects; i++) offsets.push(readUInt(tableOff + i * offSize, offSize));
-  const objs = new Array(numObjects); const dec16 = new TextDecoder('utf-16be'), dec8 = new TextDecoder('utf-8');
+  const objs = new Array(numObjects); const dec8 = new TextDecoder('utf-8');
+  const dec16 = { decode(b){ let s = ''; for (let i = 0; i + 1 < b.length; i += 2) s += String.fromCharCode((b[i] << 8) | b[i + 1]); return s; } }; // Safari 不一定支援 utf-16be，自己拆
   function readLen(pos, lo){ if (lo < 15) return [lo, pos + 1]; const m = u8[pos + 1], n = 1 << (m & 0xf); return [readUInt(pos + 2, n), pos + 2 + n]; }
   function parse(i){ if (objs[i] !== undefined) return objs[i]; const pos = offsets[i], b = u8[pos], hi = b >> 4, lo = b & 0xf; let v;
     if (hi === 0) v = lo === 8 ? false : lo === 9 ? true : null;
-    else if (hi === 1) { const n = 1 << lo; v = n <= 4 ? readUInt(pos + 1, n) : Number(dv.getBigInt64(pos + 1 + (n - 8))); if (n === 16) v = Number(dv.getBigInt64(pos + 9)); }
+    else if (hi === 1) { const n = 1 << lo; if (n <= 4) v = readUInt(pos + 1, n); else { const p = pos + 1 + (n - 8); const hiW = dv.getInt32(p), loW = dv.getUint32(p + 4); v = hiW * 4294967296 + loW; } }
     else if (hi === 2) v = lo === 2 ? dv.getFloat32(pos + 1) : dv.getFloat64(pos + 1);
     else if (hi === 3) v = new Date((dv.getFloat64(pos + 1) + 978307200) * 1000);
     else if (hi === 4) { const [n, p] = readLen(pos, lo); v = u8.slice(p, p + n); }

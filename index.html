@@ -35,10 +35,8 @@
       <button id="btnEraser" class="tb" title="橡皮擦" data-tool="eraser">◻</button>
       <button id="btnLayers" class="tb" title="圖層">▤</button>
       <button id="btnColor" class="tb" title="顏色（拖到畫布上＝填色）"><span id="colorDot"></span></button>
-      <button id="btnWizard" class="tb txt wiz" title="讓這張圖動起來（一步一步帶你圈零件）">✨ 動起來</button>
     </div>
     <div class="grp right" id="rigTools" hidden>
-      <button id="btnWizard2" class="tb txt wiz" title="一步一步圈零件，自動骨架">✨ 動起來</button>
       <button id="btnParts" class="tb txt" title="零件（變形器）">零件</button>
       <button id="btnParams" class="tb txt" title="參數面板（Cubism 式）">參數</button>
       <button id="btnLayers2" class="tb" title="圖層">▤</button>
@@ -224,7 +222,23 @@
     <hr>
     <div class="row"><label class="grow">父零件 <select id="rgParent"></select></label></div>
     <div class="row"><label>網格 <select id="rgGrid"><option value="0">無</option><option value="2">2×2</option><option value="3">3×3</option><option value="4">4×4</option><option value="6">6×6</option></select></label><button class="sm tog" id="rgPivot">⊕ 拖軸心</button><button class="sm" id="rgResetKey">清除這個姿勢</button></div>
-    <div class="row"><button class="sm tog on" id="rgShowAll">顯示所有網格</button><button class="sm" id="prAdd">＋ 自訂動作</button></div>
+    <div class="row"><button class="sm tog" id="rgShowAll">顯示所有網格</button><button class="sm" id="prAdd">＋ 自訂動作</button></div>
+    <hr>
+    <div class="dim small">只有一張線稿、還沒分圖層的時候才用這個：</div>
+    <div class="row"><button class="sm" id="btnWizard">用圈選把線稿分成零件…</button><button class="sm" id="btnWizard2" hidden></button></div>
+  </div>
+</div>
+<div id="rigHelp" hidden>
+  <div class="card">
+    <h2>骨架模式怎麼用</h2>
+    <ol>
+      <li><b>點一個圖層</b>（點畫面上的零件，或右上角 ▤ 圖層）。它會自動有一片網格。</li>
+      <li>下面<b>選一個動作</b>（角度X＝頭左右看…），把<b>滑桿拉到最旁邊</b>。</li>
+      <li><b>拉網格點</b>讓它變形，或<b>拖整塊</b>移動、拉角落縮放、拉上面的圓旋轉。這就是「拉到底時的樣子」。</li>
+      <li>把滑桿<b>拉回中間</b>，它就在兩個樣子之間動。按「▶ 試玩」看整體。</li>
+    </ol>
+    <div class="dim small">零件面板：父零件（頭髮跟著頭）、網格密度、軸心。參數面板：Cubism 式的全部滑桿。</div>
+    <div class="btns"><button class="sm pri" id="rigHelpOk">知道了</button></div>
   </div>
 </div>
 <div id="popTone" class="pop" hidden>

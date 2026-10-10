@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>夢偶 Live</title>
+<meta name="description" content="吃 .procreate／PSD，自動認圖層，做成會動的 Live2D 式人偶">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="夢偶">
+<meta name="theme-color" content="#1b1836">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="progress"></div>
+<div id="app">
+  <header id="top">
+    <button id="btnLeft" class="tb" title="零件">▤ 零件</button>
+    <button id="btnOpen" class="tb pri">開啟 .procreate / PSD</button>
+    <span id="docName" class="name dim">還沒開檔</span>
+    <span class="grow"></span>
+    <button id="btnAutoRig" class="tb" title="依圖層名稱自動做頭轉、呼吸、眨眼、嘴開合">⚙ 自動骨架</button>
+    <button id="rgTry" class="tb" title="呼吸、眨眼、頭跟著游標">▶ 試玩</button>
+    <button id="rgRec" class="tb" title="錄成 WebM">● 錄影</button>
+    <button id="btnSave" class="tb" title="存在這個瀏覽器">存檔</button>
+    <button id="btnGallery" class="tb" title="開以前存的">圖庫</button>
+    <button id="btnExport" class="tb" title="零件 PNG＋rig.json（給 Unity 用）">匯出</button>
+    <button id="btnHelp" class="tb">?</button>
+    <button id="btnRight" class="tb" title="參數">參數 ▤</button>
+  </header>
+  <div id="main">
+    <aside id="left">
+      <div class="ph">零件（＝你的圖層）<span class="hbtns"><button class="sm" id="rgAutoParent" title="依角色自動設父子（眼睛跟著頭、頭跟著身體）">自動父子</button></span></div>
+      <div class="pb" id="parts"></div><div id="partList" hidden></div>
+      <div class="ph">選中的零件</div>
+      <div class="pb" style="flex:none">
+        <div class="row"><label class="grow">角色 <select id="rgRole"></select></label></div>
+        <div class="row"><label class="grow">父零件 <select id="rgParent"></select></label></div>
+        <div class="row"><label>網格 <select id="rgGrid"><option value="0">無</option><option value="2">2×2</option><option value="3">3×3</option><option value="4">4×4</option><option value="6">6×6</option></select></label><button class="sm tog" id="rgPivot">⊕ 拖軸心</button></div>
+        <div class="row"><button class="sm" id="rgResetKey">清除這個姿勢</button><button class="sm tog" id="rgShowAll">顯示所有網格</button><button class="sm" id="rgAutoRig" hidden></button></div>
+      </div>
+    </aside>
+    <div id="stage">
+      <canvas id="screen"></canvas>
+      <div id="drop">
+        <h1>夢偶 Live</h1>
+        <div>把 <b>.procreate</b> 或 <b>PSD</b> 拖進來，或按上面「開啟」。<br>圖層怎麼分，零件就怎麼分；名稱有「頭、眼、嘴、髮、身體、手」會自動認出來。</div>
+        <button class="tb pri big" id="btnOpen2">選檔案…</button>
+        <div class="small">也吃 夢境畫室 的專案檔 (.somnia.zip)、每層一張 PNG 的 ZIP、單張 PNG</div>
+      </div>
+      <div id="hint"></div>
+    </div>
+    <aside id="right">
+      <div class="ph">參數<span class="hbtns">
+        <button class="sm" id="pkAdd2" title="為選中的零件在這個參數兩端追加關鍵形（Cubism：追加2點）">⊕2</button>
+        <button class="sm" id="pkAdd3" title="追加3點">⊕3</button>
+        <button class="sm" id="pkDel" title="刪除選中零件在這個參數的關鍵形">🗑</button>
+        <button class="sm" id="pkReset" title="全部歸零">⟲</button>
+        <button class="sm" id="pkNew" title="追加參數">＋</button>
+        <button class="sm" id="prAdd" hidden></button>
+      </span></div>
+      <div class="pb" id="popParams"><div class="dim small" style="margin-bottom:6px">點滑桿上的 ● 跳到關鍵點；綠點＝選中的零件在這裡有姿勢。</div><div id="paramRows"></div></div>
+    </aside>
+  </div>
+  <div id="bottom">
+    <div class="rigrow">
+      <div id="motionChips" class="chips"></div>
+      <button class="chip" id="rgTimelineBtn">時間軸</button>
+    </div>
+    <div class="rigrow">
+      <button class="kbtn" id="rkMin">◀</button>
+      <div id="bigSlider"><div class="track"><div class="dot d0"></div><div class="dot d1"></div><div class="dot d2"></div></div><div class="knob"></div></div>
+      <button class="kbtn" id="rkMax">▶</button>
+      <span id="rigStatus" class="dim"></span>
+    </div>
+    <div class="rigrow" id="rigTimeline" hidden>
+      <button class="chip" id="rgPlay">▶</button>
+      <label>秒 <input id="rgDur" type="number" min="0.5" max="30" step="0.5" value="3"></label>
+      <input id="rgTime" type="range" min="0" max="1000" value="0" class="grow">
+      <span id="rgTimeLbl" class="dim">0.00s</span>
+      <button class="chip" id="rgKey">◆ 記錄</button>
+      <button class="chip" id="rgKeyDel">◇ 刪除</button>
+      <button class="chip" id="rgZero">歸零</button>
+      <div id="rigKeys"></div>
+    </div>
+  </div>
+</div>
+<div id="rigHelp" hidden><div class="card" id="rigHelpOk"></div></div>
+<div id="dialog" hidden><div class="box"></div></div>
+<div id="toast"></div>
+<input type="file" id="fileIn" accept=".procreate,.psd,.zip,.png,image/png" hidden>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ag-psd@26.0.0/dist/bundle.js"></script>
+<script src="../js/core.js"></script>
+<script src="js/bplist.js"></script>
+<script src="js/lz4.js"></script>
+<script src="js/procreate.js"></script>
+<script src="js/live.js"></script>
+<script src="../js/rig.js"></script>
+<script src="js/live2.js"></script>
+</body>
+</html>

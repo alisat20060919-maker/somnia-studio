@@ -12,7 +12,9 @@ const OLD_LABEL = { angX: ['角度X', '看左', '看右'], angY: ['角度Y', '�
 const labelOf = (p) => p.lab ? [p.name, p.lab[0], p.lab[1]] : (OLD_LABEL[p.id] || [p.name, p.min < 0 ? '負向' : '', '正向']);
 
 const Rig = Studio.rig = {
-  sel: null, editParam: 'angX', pivotMode: false, showAll: true, time: 0, playing: false, trying: false, drag: null,
+  sel: null, editParam: 'angX', pivotMode: false, showAll: false, time: 0, playing: false, trying: false, drag: null,
+  // 每個有畫東西的圖層自動長網格（像 Cubism 的自動網格）
+  autoMesh(l){ if (!l || l.part.lattice || l.part.grid) return; if (!U.alphaBounds(l.canvas(0))) return; this.setGrid(l, 3); },
   init(){
     $('#rgParent').onchange = (e) => { const l = this.sel; if (!l) return; const pid = e.target.value || null; if (pid && this.isAncestor(l, App.doc.layers.find(x => x.id === pid))) { App.toast('不能把子零件設成父零件'); this.refresh(); return; } l.part.parent = pid; this.refresh(); App.invalidate(); App.dirty(); };
     $('#rgGrid').onchange = (e) => { const l = this.sel; if (!l) return; this.setGrid(l, +e.target.value); this.refresh(); App.invalidate(); App.dirty(); };
@@ -51,9 +53,10 @@ const Rig = Studio.rig = {
     const b = App.modal(`<h2>追加參數</h2><div class="dim small">Cubism 標準參數（匯出時會帶 Cubism 的 ID 與範圍）</div><div class="list" style="max-height:40vh;overflow:auto;margin:8px 0">${presets.map(p => `<div class="it" data-id="${p.id}"><span class="nm">${p.name}</span><span class="meta">${p.l2d} · ${p.range[0]}~${p.range[1]}</span></div>`).join('')}</div><div class="row"><input type="text" id="npName" class="grow" placeholder="或輸入自訂名稱"><label><input type="checkbox" id="npTwo" checked> 兩個方向</label><button class="sm pri" id="npOk">追加</button></div><div class="btns"><button class="sm" onclick="Studio.app.closeModal()">關閉</button></div>`);
     b.querySelectorAll('.it').forEach(it => it.onclick = () => { const p = presets.find(x => x.id === it.dataset.id); App.doc.params.push(Object.assign({ v: 0 }, p)); this.editParam = p.id; App.closeModal(); this.refreshParams(); App.dirty(); });
     b.querySelector('#npOk').onclick = () => { const name = b.querySelector('#npName').value.trim(); if (!name) return; const id = U.uid(); App.doc.params.push({ id, name, min: b.querySelector('#npTwo').checked ? -1 : 0, max: 1, v: 0 }); this.editParam = id; App.closeModal(); this.refreshParams(); App.dirty(); }; },
-  enter(){ this.sel = App.doc.active; if (!App.doc.params.find(p => p.id === this.editParam)) this.editParam = (App.doc.params[0] || {}).id; this.refresh(); this.refreshParams(); this.refreshKeys(); App.hint('點零件選取；拖零件＝擺姿勢；下面選動作，把滑桿拉到一端再擺姿勢＝記錄那一端的姿勢'); },
+  enter(){ for (const l of App.doc.layers) { l.part._bb = null; if (l.visible) this.autoMesh(l); } this.sel = App.doc.active; this.autoMesh(this.sel); if (!App.doc.params.find(p => p.id === this.editParam)) this.editParam = (App.doc.params[0] || {}).id; this.refresh(); this.refreshParams(); this.refreshKeys(); App.hint('點一個圖層 → 下面選動作、滑桿拉到一端 → 拉網格點或拖整塊 → 拉回中間看它動');
+    if (!localStorage.getItem('somnia-righelp')) { $('#rigHelp').hidden = false; $('#rigHelpOk').onclick = () => { $('#rigHelp').hidden = true; localStorage.setItem('somnia-righelp', '1'); }; } },
   leave(){ this.stop(); this.stopTry(); this.pivotMode = false; $('#rgPivot').classList.remove('on'); },
-  select(l){ this.sel = l; this.refresh(); this.refreshParams(); App.invalidate(); },
+  select(l){ this.sel = l; this.autoMesh(l); this.refresh(); this.refreshParams(); App.invalidate(); },
   param(){ return App.doc.params.find(p => p.id === this.editParam) || null; },
   isAncestor(a, b){ let p = b, n = 0; while (p && n++ < 100) { if (p === a) return true; p = p.part.parent ? App.doc.layers.find(x => x.id === p.part.parent) : null; } return false; },
   refresh(){
@@ -81,7 +84,15 @@ const Rig = Studio.rig = {
   world(l, memo){ memo = memo || new Map(); if (memo.has(l.id)) return memo.get(l.id); const pose = this.pose(l); let m = this.local(l, pose); const par = l.part.parent && App.doc.layers.find(x => x.id === l.part.parent); if (par && par !== l && !memo.has('__' + l.id)) { memo.set('__' + l.id, 1); m = this.world(par, memo).multiply(m); } memo.set(l.id, m); return m; },
   latticePts(l, pose){ const L = l.part.lattice; if (!L) return null; return L.pts.map((p, i) => ({ x: p.x + (pose.lat ? pose.lat[i * 2] : 0), y: p.y + (pose.lat ? pose.lat[i * 2 + 1] : 0) })); },
   // ---- 自動：父子 ＋ 常見動作 ----
-  kind(l){ const n = l.name.toLowerCase(); if (/^(head|face|頭|臉)/.test(n)) return 'head'; if (/^(body|torso|身|軀)/.test(n)) return 'body'; if (/eye|眼/.test(n)) return 'eye'; if (/mouth|嘴/.test(n)) return 'mouth'; if (/brow|眉/.test(n)) return 'brow'; if (/hair_front|前髮|bang/.test(n)) return 'hairF'; if (/hair_back|後髮/.test(n)) return 'hairB'; if (/hat|頭飾|帽|accessory/.test(n)) return 'hat'; if (/arm_l|左手/.test(n)) return 'armL'; if (/arm_r|右手/.test(n)) return 'armR'; if (/leg|腿|foot|腳/.test(n)) return 'leg'; if (/cloth|cape|skirt|披|裙|飄/.test(n)) return 'cloth'; if (/weapon|武器|道具|wand|staff/.test(n)) return 'weapon'; if (/blush|cheek|腮/.test(n)) return 'blush'; return 'other'; },
+  // 零件角色：使用者在零件面板指定的優先，否則從圖層名稱猜（中／英／日）
+  KINDS: [['head', '頭／臉'], ['body', '身體'], ['eye', '眼睛'], ['mouth', '嘴'], ['brow', '眉毛'], ['hairF', '前髮'], ['hairB', '後髮'], ['hat', '頭飾／帽'], ['armL', '左手臂'], ['armR', '右手臂'], ['leg', '腿'], ['cloth', '飄動物（披風、裙）'], ['weapon', '武器／道具'], ['blush', '腮紅'], ['other', '不動／跟著父零件']],
+  kind(l){ if (l.part && l.part.role) return l.part.role; const n = (l.name || '').toLowerCase();
+    if (/hair_front|前髮|前发|前髪|瀏海|刘海|bang|fringe/.test(n)) return 'hairF'; if (/hair_back|後髮|后发|後髪|back ?hair/.test(n)) return 'hairB'; if (/hair|髮|发|髪/.test(n)) return 'hairF';
+    if (/brow|眉/.test(n)) return 'brow'; if (/eye|眼|目|瞳|睫/.test(n)) return 'eye'; if (/mouth|lip|嘴|口|唇/.test(n)) return 'mouth'; if (/blush|cheek|腮|頬|紅暈/.test(n)) return 'blush';
+    if (/hat|cap|頭飾|帽|accessor|飾|ribbon|蝴蝶結|角|耳/.test(n)) return 'hat'; if (/head|face|頭|臉|脸|顔|顏/.test(n)) return 'head';
+    if (/arm_l|left ?arm|左手|左腕|左臂/.test(n)) return 'armL'; if (/arm_r|right ?arm|右手|右腕|右臂/.test(n)) return 'armR'; if (/arm|hand|手|腕/.test(n)) return 'armL';
+    if (/leg|foot|腿|脚|腳|足|鞋/.test(n)) return 'leg'; if (/cloth|cape|skirt|scarf|tail|披|裙|飄|围巾|圍巾|尾|リボン|マント/.test(n)) return 'cloth'; if (/weapon|武器|道具|wand|staff|sword|杖|剣|劍/.test(n)) return 'weapon';
+    if (/body|torso|身|軀|体|服|衣|胸/.test(n)) return 'body'; return 'other'; },
   autoParent(){ const d = App.doc; const head = d.layers.find(l => this.kind(l) === 'head'), body = d.layers.find(l => this.kind(l) === 'body');
     for (const l of d.layers) { const k = this.kind(l); if (['eye', 'mouth', 'brow', 'hairF', 'hairB', 'hat', 'blush'].includes(k) && head) l.part.parent = head.id; else if (['head', 'armL', 'armR', 'cloth', 'weapon', 'leg'].includes(k) && body && l !== body) l.part.parent = body.id; else if (l.clip) { const base = d.baseOf(l); if (base !== l) l.part.parent = base.id; } }
     // 軸心：身體與頭在底部中央（脖子），手臂在肩膀，眼睛嘴巴在中央

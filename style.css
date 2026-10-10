@@ -36,7 +36,12 @@ button{font-family:inherit;cursor:pointer}
 .sq.on{background:var(--acc);color:#1c1938}
 .rb{width:30px;height:30px;border-radius:8px;border:1px solid var(--line);background:#1b1836cc;color:var(--fg);font-size:16px;padding:0}
 #hint{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);color:#fff9;font-size:12px;pointer-events:none;white-space:nowrap;max-width:90%;overflow:hidden;text-overflow:ellipsis}
-.tb.wiz{background:linear-gradient(135deg,#ffe08a,#ffb7d5);color:#1c1938;font-weight:700;margin-left:6px}
+#rigHelp{position:fixed;inset:0;z-index:55;background:#0008;display:flex;align-items:center;justify-content:center}
+#rigHelp .card{background:var(--bar);border:1px solid var(--gold);border-radius:16px;padding:18px 20px;max-width:min(92vw,520px);box-shadow:0 20px 60px #000c}
+#rigHelp h2{margin:0 0 10px;font-size:17px}
+#rigHelp ol{margin:0 0 10px;padding-left:22px;line-height:1.8;font-size:14px}
+#rigHelp .btns{display:flex;justify-content:flex-end;margin-top:10px}
+#rigHelp .pri{background:var(--acc);color:#1c1938;border-color:var(--acc);font-weight:700}
 #wizBar{position:absolute;left:50%;top:10px;transform:translateX(-50%);z-index:6;background:#1b1836f2;border:2px solid var(--gold);border-radius:14px;padding:10px 14px;display:flex;flex-direction:column;gap:8px;max-width:min(92%,640px);box-shadow:0 10px 30px #000a;backdrop-filter:blur(8px)}
 #wizBar .wzq{font-size:15px;line-height:1.5}
 #wizBar .wzq b{color:var(--gold)}

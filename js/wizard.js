@@ -34,6 +34,5 @@ const Wiz = Studio.wizard = {
     R.autoParent(); R.autoRig(); App.refreshLayers(); App.setMode('rig'); App.setActive(d.layers.find(l => l.name === 'head') || this.src); R.refresh(); R.refreshParams(); setTimeout(() => { R.startTry(); App.modal(`<h2>動起來了！</h2><div class="dim" style="line-height:1.7">現在移動手指或滑鼠，頭會跟著看，會呼吸、眨眼。<br><br>想調整：<br>・頂欄「參數」可以拉每一個動作看效果<br>・覺得某個零件動太多／太少：下面選那個動作，把滑桿拉到一端，直接拖那個零件到你要的位置<br>・「零件」裡可以改父子關係和網格變形<br>・再按一次「■ 停止」就回到編輯</div><div class="btns"><button class="sm pri" onclick="Studio.app.closeModal()">好</button></div>`); }, 100); App.dirty(); },
   stop(){ this.on = false; $('#wizBar').hidden = true; App.sel = null; $('#barSelect').hidden = !(App.tool === 'select' || App.tool === 'lasso'); App.invalidate(); App.toast('已結束精靈，切好的零件都還在'); },
 };
-$('#btnWizard').onclick = () => Wiz.offer();
-$('#btnWizard2').onclick = () => Wiz.offer();
+$('#btnWizard').onclick = () => { App.closePopups(); Wiz.offer(); };
 })();

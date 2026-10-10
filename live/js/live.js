@@ -20,7 +20,8 @@ let openPop = null; App.openPop = (id, anchor, opts = {}) => { const el = $('#' 
 App.closePopups = () => { document.querySelectorAll('.pop').forEach(p => p.hidden = true); openPop = null; };
 document.addEventListener('pointerdown', (e) => { if (openPop && !e.target.closest('.pop') && !e.target.closest('#top')) App.closePopups(); }, true);
 App.dirty = () => { clearTimeout(App._dt); App._dt = setTimeout(() => App.saveLocal(true), 4000); };
-App.saveFile = (name, blob) => U.download(name, blob);
+App.cap = { downloads: null }; if (window.claude && claude.use) { claude.use('downloads').then(d => { App.cap.downloads = d; }).catch(() => {}); }
+App.saveFile = async (name, blob) => { const dl = App.cap.downloads; if (dl) { try { await dl.save({ filename: name, data: blob }); App.toast('已儲存 ' + name); return; } catch (e) { if (e && e.code === 'declined') return; } } U.download(name, blob); };
 App.setProgress = (p) => { const el = $('#progress'); el.style.width = (p * 100) + '%'; if (p >= 1) setTimeout(() => el.style.width = '0', 400); };
 // ---- 視圖 ----
 App.docToScreen = (p) => { const v = App.view, c = Math.cos(v.r), s = Math.sin(v.r); return { x: v.x + (p.x * c - p.y * s) * v.s, y: v.y + (p.x * s + p.y * c) * v.s }; };

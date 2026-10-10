@@ -1,0 +1,16 @@
+{
+  "name": "somnia-live",
+  "productName": "夢偶Live",
+  "version": "0.1.0",
+  "description": "吃 .procreate／PSD，圖層＝零件，自動骨架的 Live2D 式人偶工具",
+  "main": "desktop/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-packager . 夢偶Live --platform=win32 --arch=x64 --out dist --overwrite --ignore=\"^/(dist|node_modules/\\.cache|\\.git|\\.claude|live/tmp)\" --app-copyright=\"Somnia\""
+  },
+  "devDependencies": {
+    "electron": "33.2.1",
+    "electron-packager": "17.1.2"
+  }
+}

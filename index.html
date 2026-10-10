@@ -182,6 +182,12 @@
       <button class="mi" data-act="rename">重新命名專案…</button>
       <button class="mi" data-act="fit">置中顯示</button>
       <button class="mi" data-act="fullscreen">全螢幕</button>
+      <hr>
+      <div class="dim small" style="padding:0 10px">版面（被外框擋到時用）</div>
+      <div class="row" style="padding:0 10px"><button class="chip" data-layout="top">工具列在上</button><button class="chip" data-layout="bottom">工具列在下</button></div>
+      <label style="padding:0 10px">上方留白 <input type="range" id="insTop" min="0" max="120" value="0"><b>0</b></label>
+      <label style="padding:0 10px">下方留白 <input type="range" id="insBottom" min="0" max="120" value="0"><b>0</b></label>
+      <label style="padding:0 10px">左右留白 <input type="range" id="insSide" min="0" max="80" value="0"><b>0</b></label>
     </div>
     <div class="atab" data-t="share" hidden>
       <button class="mi" data-act="exportPng">PNG（合併）</button>

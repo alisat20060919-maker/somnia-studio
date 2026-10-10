@@ -27,7 +27,8 @@ let openPop = null;
 App.openPop = (id, anchor, opts = {}) => {
   const el = $('#' + id); if (openPop === id && !opts.keep) { App.closePopups(); return; } App.closePopups(); el.hidden = false; openPop = id;
   const r = anchor ? anchor.getBoundingClientRect() : { left: 8, right: 8, top: 46, bottom: 46 }; const w = el.offsetWidth, h = el.offsetHeight;
-  let x = opts.alignRight ? r.right - w : r.left, y = opts.above ? r.top - h - 6 : r.bottom + 6; x = U.clamp(x, 6, innerWidth - w - 6); y = U.clamp(y, 6, innerHeight - h - 6); el.style.left = x + 'px'; el.style.top = y + 'px';
+  const above = opts.above || (anchor && r.top > innerHeight * 0.6); // 工具列在下方時，面板往上開
+  let x = opts.alignRight ? r.right - w : r.left, y = above ? r.top - h - 6 : r.bottom + 6; x = U.clamp(x, 6, innerWidth - w - 6); y = U.clamp(y, 6, innerHeight - h - 6); el.style.left = x + 'px'; el.style.top = y + 'px';
   if (opts.onopen) opts.onopen();
 };
 App.closePopups = () => { $$('.pop').forEach(p => p.hidden = true); openPop = null; };
@@ -169,7 +170,14 @@ App.undo = () => { if (App.tool === 'move' && Tools.move.fl) { Tools.move.discar
 App.redo = () => { if (App.history.redo()) { App.refreshLayers(); App.invalidate(); App.dirty(); } };
 App.history.onchange = () => { $('#btnUndo').style.opacity = App.history.undoS.length ? 1 : 0.4; $('#btnRedo').style.opacity = App.history.redoS.length ? 1 : 0.4; };
 $('#btnUndo').onclick = App.undo; $('#btnRedo').onclick = App.redo;
-$('#btnActions').onclick = (e) => { App.openPop('popActions', e.currentTarget, { onopen: () => { $('#popActions [data-act=symmetry]').classList.toggle('on', App.doc.symmetry); } }); };
+$('#btnActions').onclick = (e) => { App.openPop('popActions', e.currentTarget, { onopen: () => { $('#popActions [data-act=symmetry]').classList.toggle('on', App.doc.symmetry); syncLayoutUI(); } }); };
+// 版面：工具列位置與邊界留白（被 claude.ai 外框或瀏覽器列擋到時用），記在這台裝置
+const LAYOUT_KEY = 'somnia-layout'; let layout = Object.assign({ bar: 'top', top: 0, bottom: 0, side: 0 }, JSON.parse(localStorage.getItem(LAYOUT_KEY) || '{}'));
+function applyLayout(){ document.body.classList.toggle('bar-bottom', layout.bar === 'bottom'); const r = document.documentElement.style; r.setProperty('--ins-top', layout.top + 'px'); r.setProperty('--ins-bottom', layout.bottom + 'px'); r.setProperty('--ins-side', layout.side + 'px'); localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)); App.closePopups(); if (App.doc) setTimeout(App.fit, 50); }
+function syncLayoutUI(){ $$('#popActions [data-layout]').forEach(b => b.classList.toggle('on', b.dataset.layout === layout.bar)); $('#insTop').value = layout.top; $('#insBottom').value = layout.bottom; $('#insSide').value = layout.side; ['insTop', 'insBottom', 'insSide'].forEach(id => $('#' + id).nextElementSibling.textContent = $('#' + id).value); }
+$$('#popActions [data-layout]').forEach(b => b.onclick = () => { layout.bar = b.dataset.layout; applyLayout(); App.toast(layout.bar === 'bottom' ? '工具列移到下方' : '工具列移到上方'); });
+[['insTop', 'top'], ['insBottom', 'bottom'], ['insSide', 'side']].forEach(([id, k]) => { const el = $('#' + id); el.oninput = (e) => { layout[k] = +e.target.value; e.target.nextElementSibling.textContent = e.target.value; const r = document.documentElement.style; r.setProperty('--ins-' + k, layout[k] + 'px'); }; el.onchange = () => { localStorage.setItem(LAYOUT_KEY, JSON.stringify(layout)); App.fit(); }; });
+applyLayout();
 $$('#popActions [data-act]').forEach(b => b.onclick = () => { App.closePopups(); App.menu(b.dataset.act); });
 $('#btnGallery').onclick = () => openGallery();
 $('#gClose').onclick = () => { $('#gallery').hidden = true; }; $('#gNew').onclick = () => { $('#gallery').hidden = true; newDialog(); };

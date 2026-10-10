@@ -88,14 +88,15 @@ $$('#barSelect .chip[data-k]').forEach(c => c.onclick = () => App.setTool(c.data
 $('#selAll').onclick = () => { const d = App.doc, p = new Path2D(); p.rect(0, 0, d.w, d.h); App.sel = { path: p, bbox: { x: 0, y: 0, w: d.w, h: d.h } }; App.invalidate(); };
 $('#selNone').onclick = () => { App.sel = null; App.invalidate(); }; $('#selDone').onclick = () => App.setTool('brush');
 // 把選取範圍剪成新的零件圖層（分零件給骨架用）
-function cutToLayer(name){ const d = App.doc, src = d.active; if (!App.sel) { App.toast('先圈出範圍'); return; } if (!src || src.locked) { App.toast('圖層已鎖定'); return; }
+App.cutToLayer = function cutToLayer(name, quiet){ const d = App.doc, src = d.active; if (!App.sel) { App.toast('先圈出範圍'); return; } if (!src || src.locked) { App.toast('圖層已鎖定'); return; }
   const cv = src.canvas(d.frame); const snap = App.history.beginPixels(cv); const nl = new Studio.Layer(d, name); nl.opacity = src.opacity; nl.blend = src.blend;
   const nx = nl.canvas(0).getContext('2d'); nx.save(); nx.clip(App.sel.path); nx.drawImage(cv, 0, 0); nx.restore();
   const x = cv.getContext('2d'); x.save(); x.clip(App.sel.path); x.clearRect(0, 0, d.w, d.h); x.restore();
   const i = d.layerIndex(src) + 1; const before = d.layers.slice(), a0 = d.activeId; d.layers.splice(i, 0, nl); d.activeId = nl.id; const after = d.layers.slice();
   App.history.commitPixels(snap, App.sel.bbox, src); const px = App.history.undoS.pop(); // 把像素與結構合成一步
   App.history.push({ undo: () => { px.undo(); d.layers = before.slice(); d.activeId = a0; App.refreshLayers(); App.invalidate(); }, redo: () => { px.redo(); d.layers = after.slice(); d.activeId = nl.id; App.refreshLayers(); App.invalidate(); } });
-  src.thumbDirty = true; App.sel = null; App.refreshLayers(); App.invalidate(); App.dirty(); App.toast('已切出「' + name + '」，可以繼續圈下一個'); }
+  src.thumbDirty = true; App.sel = null; App.refreshLayers(); App.invalidate(); App.dirty(); if (!quiet) App.toast('已切出「' + name + '」，可以繼續圈下一個'); };
+const cutToLayer = App.cutToLayer;
 $('#selCut').onclick = (e) => { if (!App.sel) { App.toast('先圈出範圍'); return; } const m = $('#partMenu'); m.innerHTML = PARTS.filter(p => p[0] !== 'sketch').map(p => `<button class="mi" data-n="${p[0]}">${p[0]} <span class="dim">${p[1]}</span></button>`).join('') + '<hr><button class="mi" data-n="?">自訂名稱…</button>'; App.openPop('partMenu', e.currentTarget, { keep: true, above: true });
   m.querySelectorAll('button').forEach(b => b.onclick = async () => { App.closePopups(); let n = b.dataset.n; if (n === '?') { n = await App.prompt('新圖層名稱', '零件'); if (!n) return; } cutToLayer(n); }); };
 $('#mvApply').onclick = () => { Tools.move.apply(); App.setTool('brush'); }; $('#mvCancel').onclick = () => { Tools.move.discard(); App.setTool('brush'); }; $('#mvFlipH').onclick = () => Tools.move.flip(true); $('#mvFlipV').onclick = () => Tools.move.flip(false);

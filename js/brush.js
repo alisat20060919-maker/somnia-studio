@@ -251,7 +251,7 @@ function selTool(kind){
     up(p){ if (!this.pts) return; const pts = this.pts; this.pts = null; const path = new Path2D(); pts.forEach((q, i) => i ? path.lineTo(q.x, q.y) : path.moveTo(q.x, q.y)); path.closePath();
       let minx = 1e9, miny = 1e9, maxx = -1e9, maxy = -1e9; for (const q of pts) { minx = Math.min(minx, q.x); miny = Math.min(miny, q.y); maxx = Math.max(maxx, q.x); maxy = Math.max(maxy, q.y); }
       if (maxx - minx < 3 || maxy - miny < 3) { App.sel = null; App.toast('取消選取'); } else App.sel = { path, bbox: { x: minx, y: miny, w: maxx - minx, h: maxy - miny } };
-      App.invalidate(); },
+      App.invalidate(); if (Studio.wizard && Studio.wizard.on) Studio.wizard.onSelect(); },
     cancel(){ this.pts = null; },
     overlay(ctx){ if (!this.pts || this.pts.length < 2) return; const s = App.view.s; ctx.strokeStyle = '#fff'; ctx.lineWidth = 1 / s; ctx.setLineDash([5 / s, 4 / s]); ctx.beginPath(); this.pts.forEach((q, i) => i ? ctx.lineTo(q.x, q.y) : ctx.moveTo(q.x, q.y)); ctx.closePath(); ctx.stroke(); ctx.setLineDash([]); },
   };

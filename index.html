@@ -35,8 +35,10 @@
       <button id="btnEraser" class="tb" title="橡皮擦" data-tool="eraser">◻</button>
       <button id="btnLayers" class="tb" title="圖層">▤</button>
       <button id="btnColor" class="tb" title="顏色（拖到畫布上＝填色）"><span id="colorDot"></span></button>
+      <button id="btnWizard" class="tb txt wiz" title="讓這張圖動起來（一步一步帶你圈零件）">✨ 動起來</button>
     </div>
     <div class="grp right" id="rigTools" hidden>
+      <button id="btnWizard2" class="tb txt wiz" title="一步一步圈零件，自動骨架">✨ 動起來</button>
       <button id="btnParts" class="tb txt" title="零件（變形器）">零件</button>
       <button id="btnParams" class="tb txt" title="參數面板（Cubism 式）">參數</button>
       <button id="btnLayers2" class="tb" title="圖層">▤</button>
@@ -54,6 +56,7 @@
         <button id="btnRedo" class="rb" title="重做">↷</button>
       </aside>
       <div id="hint"></div>
+      <div id="wizBar" hidden></div>
       <div id="dropSwatch" hidden></div>
     </div>
 
@@ -274,5 +277,6 @@
 <script src="js/anim.js"></script>
 <script src="js/rig.js"></script>
 <script src="js/ui.js"></script>
+<script src="js/wizard.js"></script>
 </body>
 </html>

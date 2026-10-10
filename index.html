@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>夢境畫室</title>
+<meta name="description" content="夢行者的遊戲素材繪圖程式：Procreate 式介面、圖層、筆刷庫、漸層、逐格動畫、Live2D 式骨架">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="夢境畫室">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1b1836">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header id="top">
+    <div class="grp">
+      <button id="btnGallery" class="tb txt">圖庫</button>
+      <button id="btnActions" class="tb" title="動作">🔧</button>
+      <button id="btnAdjust" class="tb" title="調整">✨</button>
+      <button id="btnSelect" class="tb" title="選取" data-tool="select">S</button>
+      <button id="btnMove" class="tb" title="變形" data-tool="move">➶</button>
+    </div>
+    <div class="grp center">
+      <nav id="modes">
+        <button data-mode="paint" class="on">繪圖</button>
+        <button data-mode="anim">動畫</button>
+        <button data-mode="rig">骨架</button>
+      </nav>
+    </div>
+    <div class="grp right" id="paintTools">
+      <button id="btnBrush" class="tb on" title="筆刷" data-tool="brush">✎</button>
+      <button id="btnSmudge" class="tb" title="塗抹" data-tool="smudge">☁</button>
+      <button id="btnEraser" class="tb" title="橡皮擦" data-tool="eraser">◻</button>
+      <button id="btnLayers" class="tb" title="圖層">▤</button>
+      <button id="btnColor" class="tb" title="顏色（拖到畫布上＝填色）"><span id="colorDot"></span></button>
+    </div>
+    <div class="grp right" id="rigTools" hidden>
+      <button id="btnParts" class="tb txt" title="零件（變形器）">零件</button>
+      <button id="btnParams" class="tb txt" title="參數面板（Cubism 式）">參數</button>
+      <button id="btnLayers2" class="tb" title="圖層">▤</button>
+    </div>
+  </header>
+
+  <div id="main">
+    <div id="stage">
+      <canvas id="screen"></canvas>
+      <aside id="side">
+        <div class="vslider" id="sizeSl" title="筆刷大小"><div class="fill"></div><b>24</b></div>
+        <button id="btnModify" class="sq" title="吸色（按住後點畫布）">◉</button>
+        <div class="vslider" id="opSl" title="不透明度"><div class="fill"></div><b>100</b></div>
+        <button id="btnUndo" class="rb" title="復原">↶</button>
+        <button id="btnRedo" class="rb" title="重做">↷</button>
+      </aside>
+      <div id="hint"></div>
+      <div id="dropSwatch" hidden></div>
+    </div>
+
+    <!-- 底部工具列：選取／變形／動畫輔助／骨架 -->
+    <div id="barSelect" class="bar" hidden>
+      <button class="chip" data-k="rect">矩形</button>
+      <button class="chip" data-k="lasso">手繪</button>
+      <span class="sep"></span>
+      <button class="chip" id="selAll">全選</button>
+      <button class="chip" id="selNone">清除</button>
+      <button class="chip" id="selDone">完成</button>
+    </div>
+    <div id="barMove" class="bar" hidden>
+      <button class="chip" id="mvFlipH">⇋ 水平翻轉</button>
+      <button class="chip" id="mvFlipV">⇅ 垂直翻轉</button>
+      <span class="sep"></span>
+      <button class="chip" id="mvCancel">取消</button>
+      <button class="chip pri" id="mvApply">完成</button>
+    </div>
+    <div id="barAnim" class="bar anim" hidden>
+      <button class="chip" id="tlSettings">設定</button>
+      <button class="chip" id="tlPlay">▶ 播放</button>
+      <div id="frames"></div>
+      <button class="chip" id="tlNewCel">＋ 新增影格</button>
+      <button class="chip" id="tlDupCel">複製</button>
+    </div>
+    <div id="barRig" class="bar rig" hidden>
+      <div class="rigrow">
+        <div id="motionChips" class="chips"></div>
+        <button class="chip" id="rgTry">▶ 試玩</button>
+        <button class="chip" id="rgTimelineBtn">時間軸</button>
+      </div>
+      <div class="rigrow slider">
+        <button class="kbtn" id="rkMin">◀</button>
+        <div id="bigSlider"><div class="track"><div class="dot d0"></div><div class="dot d1"></div><div class="dot d2"></div></div><div class="knob"></div></div>
+        <button class="kbtn" id="rkMax">▶</button>
+        <span id="rigStatus" class="dim"></span>
+      </div>
+      <div class="rigrow" id="rigTimeline" hidden>
+        <button class="chip" id="rgPlay">▶</button>
+        <label>秒 <input id="rgDur" type="number" min="0.5" max="30" step="0.5" value="3"></label>
+        <input id="rgTime" type="range" min="0" max="1000" value="0" class="grow">
+        <span id="rgTimeLbl" class="dim">0.00s</span>
+        <button class="chip" id="rgKey">◆ 記錄</button>
+        <button class="chip" id="rgKeyDel">◇ 刪除</button>
+        <button class="chip" id="rgZero">歸零</button>
+        <button class="chip" id="rgRec">● 錄影</button>
+        <div id="rigKeys"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 彈出面板 -->
+<div id="popBrush" class="pop big" hidden>
+  <div class="pophead"><span>筆刷庫</span><span class="hbtns"><button class="sm" id="brushSettingsBtn">調整這支筆</button></span></div>
+  <div class="popbody split">
+    <div id="brushSets"></div>
+    <div id="brushGrid"></div>
+  </div>
+</div>
+<div id="popBrushSet" class="pop" hidden>
+  <div class="pophead"><span id="bsName">筆刷設定</span></div>
+  <div class="popbody">
+    <canvas id="bsPreview" width="260" height="70"></canvas>
+    <label>大小 <input type="range" id="bSize" min="1" max="300" value="24"><b>24</b></label>
+    <label>不透明 <input type="range" id="bOp" min="1" max="100" value="100"><b>100</b></label>
+    <label>硬度 <input type="range" id="bHard" min="0" max="100" value="90"><b>90</b></label>
+    <label>間距 <input type="range" id="bSpace" min="2" max="150" value="12"><b>12</b></label>
+    <div class="dim small" style="margin-top:6px">抖動修正</div>
+    <label>拉繩 <input type="range" id="bStream" min="0" max="100" value="30"><b>30</b></label>
+    <label>平滑 <input type="range" id="bSmooth" min="0" max="100" value="15"><b>15</b></label>
+    <label>過濾 <input type="range" id="bFilter" min="0" max="100" value="10"><b>10</b></label>
+    <div class="dim small" style="margin-bottom:6px">拉繩＝筆跡被繩子拖著走（線條變直）；平滑＝把最近幾個點平均；過濾＝太小的手抖不理</div>
+    <label>散佈 <input type="range" id="bScatter" min="0" max="300" value="0"><b>0</b></label>
+    <label>點數 <input type="range" id="bCount" min="1" max="12" value="1"><b>1</b></label>
+    <div id="bToneBox" hidden>
+      <div class="dim small" style="margin-top:6px">網點</div>
+      <label>間距 <input type="range" id="bTPitch" min="2" max="40" value="8"><b>8</b></label>
+      <label>濃度 <input type="range" id="bTDens" min="5" max="100" value="45"><b>45</b></label>
+      <label>角度 <input type="range" id="bTAngle" min="0" max="90" value="45"><b>45</b></label>
+      <label>形狀 <select id="bTShape"><option value="dot">圓點</option><option value="square">方點</option><option value="line">線</option><option value="cross">交叉線</option></select></label>
+    </div>
+    <label>筆尖 <select id="bTip"><option value="circle">圓</option><option value="star">四角星</option><option value="moon">新月</option><option value="heart">愛心</option><option value="sparkle">閃光</option></select></label>
+    <label class="chk"><input type="checkbox" id="bPSize" checked> 壓力影響大小</label>
+    <label class="chk"><input type="checkbox" id="bPOp"> 壓力影響不透明</label>
+  </div>
+</div>
+<div id="popLayers" class="pop" hidden>
+  <div class="pophead"><span>圖層</span><span class="hbtns"><button class="sm" id="lyPart">零件▾</button><button class="sm" id="lyAdd">＋</button></span></div>
+  <div class="popbody"><div id="layerList"></div></div>
+</div>
+<div id="popLayerMenu" class="pop menu" hidden></div>
+<div id="popBlend" class="pop" hidden>
+  <div class="popbody">
+    <label>不透明度 <input type="range" id="lyOp" min="0" max="100" value="100"><b>100</b></label>
+    <div id="blendList" class="list"></div>
+  </div>
+</div>
+<div id="popColor" class="pop" hidden>
+  <div class="pophead tabs"><button class="tab on" data-t="wheel">色環</button><button class="tab" data-t="pal">色盤</button><button class="tab" data-t="num">數值</button></div>
+  <div class="popbody">
+    <div class="ctab" data-t="wheel"><canvas id="wheel" width="240" height="240"></canvas></div>
+    <div class="ctab" data-t="pal" hidden><div id="palette" class="swgrid"></div><div class="row"><button class="sm" id="btnAddPal">＋ 加入目前顏色</button><span class="dim small">長按色塊刪除</span></div></div>
+    <div class="ctab" data-t="num" hidden>
+      <label>H <input type="range" id="cH" min="0" max="360"><b>0</b></label>
+      <label>S <input type="range" id="cS" min="0" max="100"><b>0</b></label>
+      <label>B <input type="range" id="cV" min="0" max="100"><b>0</b></label>
+      <div class="row"><input id="hexIn" type="text" maxlength="7" spellcheck="false"></div>
+    </div>
+    <div class="row"><div id="recent" class="swgrid small"></div></div>
+    <div class="row"><div id="swPair"><div id="swPrimary"></div><div id="swSecondary"></div></div><span class="dim small">點一下交換主色／次色</span></div>
+  </div>
+</div>
+<div id="popActions" class="pop" hidden>
+  <div class="pophead tabs"><button class="tab on" data-t="add">加入</button><button class="tab" data-t="canvas">畫布</button><button class="tab" data-t="share">分享</button><button class="tab" data-t="help">說明</button></div>
+  <div class="popbody">
+    <div class="atab" data-t="add">
+      <button class="mi" data-act="import">匯入圖片到新圖層…</button>
+      <button class="mi" data-act="importProj">匯入專案檔 (.zip)…</button>
+      <button class="mi" data-act="cloudOpen">從雲端開啟…</button>
+    </div>
+    <div class="atab" data-t="canvas" hidden>
+      <button class="mi" data-act="resize">畫布大小…</button>
+      <button class="mi tog" data-act="symmetry">左右對稱</button>
+      <button class="mi" data-act="rename">重新命名專案…</button>
+      <button class="mi" data-act="fit">置中顯示</button>
+      <button class="mi" data-act="fullscreen">全螢幕</button>
+    </div>
+    <div class="atab" data-t="share" hidden>
+      <button class="mi" data-act="exportPng">PNG（合併）</button>
+      <button class="mi" data-act="exportLayers">ZIP：每層一張 PNG＋JSON（給 Unity）</button>
+      <button class="mi" data-act="exportSheet">動畫 Sprite Sheet</button>
+      <button class="mi" data-act="exportRig">骨架：零件 PNG＋rig.json</button>
+      <button class="mi" data-act="exportProj">專案檔 (.zip)</button>
+      <button class="mi" data-act="cloudSave">上傳到雲端（給 Claude 讀）</button>
+      <button class="mi" data-act="save">儲存到本機</button>
+    </div>
+    <div class="atab" data-t="help" hidden><pre id="helpText"></pre></div>
+  </div>
+</div>
+<div id="popAdjust" class="pop" hidden>
+  <div class="popbody">
+    <button class="mi" data-adj="gradient-linear">線性漸層（拖一條線）</button>
+    <button class="mi" data-adj="gradient-radial">放射漸層（拖一條線）</button>
+    <button class="mi" data-adj="fill">填色（點一下）</button>
+    <button class="mi" data-adj="tone">網點填滿…（均勻／半色調／漸層網點）</button>
+    <button class="mi" data-adj="picker">吸色</button>
+    <button class="mi" data-adj="hand">移動畫布</button>
+    <div class="dim small" style="padding:6px 10px">漸層到：<label><input type="radio" name="gto" value="secondary" checked> 次要色</label>　<label><input type="radio" name="gto" value="transparent"> 透明</label></div>
+  </div>
+</div>
+<div id="popParts" class="pop" hidden>
+  <div class="pophead"><span>零件</span><span class="hbtns"><button class="sm" id="rgAutoParent" title="依名稱自動設父子">自動父子</button><button class="sm" id="rgAutoRig" title="依名稱自動做頭轉、呼吸、眨眼…">一鍵骨架</button></span></div>
+  <div class="popbody">
+    <div id="partList" class="list"></div>
+    <hr>
+    <div class="row"><label class="grow">父零件 <select id="rgParent"></select></label></div>
+    <div class="row"><label>網格 <select id="rgGrid"><option value="0">無</option><option value="2">2×2</option><option value="3">3×3</option><option value="4">4×4</option><option value="6">6×6</option></select></label><button class="sm tog" id="rgPivot">⊕ 拖軸心</button><button class="sm" id="rgResetKey">清除這個姿勢</button></div>
+    <div class="row"><button class="sm tog on" id="rgShowAll">顯示所有網格</button><button class="sm" id="prAdd">＋ 自訂動作</button></div>
+  </div>
+</div>
+<div id="popTone" class="pop" hidden>
+  <div class="pophead"><span>網點填滿</span><span class="hbtns"><button class="sm" id="toneCancel">取消</button><button class="sm pri" id="toneApply" style="background:var(--gold);color:#1c1938">套用</button></span></div>
+  <div class="popbody">
+    <div class="row chips"><button class="chip on" data-src="flat">均勻</button><button class="chip" data-src="image">依底圖明暗</button><button class="chip" data-src="gradient">拖一條線漸層</button></div>
+    <label>間距 <input type="range" id="tPitch" min="2" max="40" value="8"><b>8</b></label>
+    <label id="tDensRow">濃度 <input type="range" id="tDens" min="0" max="100" value="45"><b>45</b></label>
+    <label id="tD0Row" hidden>起點濃度 <input type="range" id="tD0" min="0" max="100" value="10"><b>10</b></label>
+    <label id="tD1Row" hidden>終點濃度 <input type="range" id="tD1" min="0" max="100" value="90"><b>90</b></label>
+    <label>角度 <input type="range" id="tAngle" min="0" max="90" value="45"><b>45</b></label>
+    <label>形狀 <select id="tShape"><option value="dot">圓點</option><option value="square">方點</option><option value="line">線</option><option value="cross">交叉線</option></select></label>
+    <div class="dim small">用目前的顏色鋪在目前圖層；有選取範圍就只鋪在範圍內。「依底圖明暗」會把整張畫面變成半色調。</div>
+  </div>
+</div>
+<div id="popParams" class="pop" hidden>
+  <div class="pophead"><span>參數</span><span class="hbtns">
+    <button class="sm" id="pkAdd2" title="為選中的零件在這個參數的兩端追加關鍵形（Cubism：追加2點）">⊕2</button>
+    <button class="sm" id="pkAdd3" title="追加3點（兩端＋中間）">⊕3</button>
+    <button class="sm" id="pkDel" title="刪除選中零件在這個參數上的關鍵形">🗑</button>
+    <button class="sm" id="pkReset" title="重置為預設值（全部歸零）">⟲</button>
+    <button class="sm" id="pkNew" title="追加新參數">＋</button>
+  </span></div>
+  <div class="popbody"><div class="dim small" style="margin-bottom:6px">點滑桿上的 ● 跳到關鍵點；綠點＝選中的零件在這裡有關鍵形。拖滑桿預覽，拖零件＝編輯目前關鍵形。</div><div id="paramRows"></div></div>
+</div>
+<div id="popAnimSet" class="pop" hidden>
+  <div class="popbody">
+    <label>FPS <input type="range" id="tlFps" min="1" max="30" value="8"><b>8</b></label>
+    <label class="chk"><input type="checkbox" id="tlOnion"> 洋蔥皮</label>
+    <button class="mi" data-anim="addFrame">在最後加一格（空）</button>
+    <button class="mi" data-anim="delCel">刪除這一格的畫面</button>
+    <button class="mi" data-anim="delFrame">刪掉最後一格</button>
+    <div class="dim small" style="padding:6px 10px">要動的圖層先在圖層選單裡設成「動畫圖層」；其他圖層當背景。</div>
+  </div>
+</div>
+<div id="partMenu" class="pop menu" hidden></div>
+<div id="gallery" hidden>
+  <div class="ghead"><span>圖庫</span><span class="hbtns"><button class="sm" id="gNew">＋ 新畫布</button><button class="sm" id="gClose">返回</button></span></div>
+  <div id="gGrid"></div>
+</div>
+<div id="dialog" hidden><div class="box"></div></div>
+<div id="toast"></div>
+<input type="file" id="fileIn" accept="image/*" hidden>
+<input type="file" id="zipIn" accept=".zip" hidden>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="js/core.js"></script>
+<script src="js/brush.js"></script>
+<script src="js/input.js"></script>
+<script src="js/anim.js"></script>
+<script src="js/rig.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>
